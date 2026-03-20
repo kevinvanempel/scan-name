@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { Alert, ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen } from '../src/components/Screen';
 import { AppHeader } from '../src/components/AppHeader';
@@ -22,15 +22,21 @@ export default function ScanScreen() {
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState<number | null>(null);
 
-  async function handlePick() {
+  async function ensureAllowed() {
     const allowed = await canProcessMore();
     const currentUsage = await getMonthlyUsage();
     setUsage(currentUsage);
 
     if (!allowed) {
       router.push('/modal/paywall');
-      return;
+      return false;
     }
+    return true;
+  }
+
+  async function handlePick() {
+    const allowed = await ensureAllowed();
+    if (!allowed) return;
 
     try {
       setLoading(true);
@@ -64,15 +70,31 @@ export default function ScanScreen() {
     }
   }
 
+  async function handleOpenCamera() {
+    const allowed = await ensureAllowed();
+    if (!allowed) return;
+    router.push('/camera');
+  }
+
   return (
     <Screen>
-      <AppHeader title={t(language, 'scan')} subtitle="AI herkent inhoud automatisch" />
+      <AppHeader title={t(language, 'scan')} subtitle="Kies uit galerij of maak direct een foto" />
 
       <View style={styles.dropZone}>
         <Text style={styles.camera}>📷</Text>
         <Text style={styles.big}>{t(language, 'addMedia')}</Text>
-        <Text style={styles.sub}>Screenshot, foto of video vanuit je bibliotheek of camera</Text>
-        <PrimaryButton label={loading ? t(language, 'processing') : t(language, 'chooseFile')} onPress={handlePick} disabled={loading} />
+        <Text style={styles.sub}>Galerij of directe camera-opname met AI analyse</Text>
+
+        <PrimaryButton
+          label={loading ? t(language, 'processing') : t(language, 'chooseFile')}
+          onPress={handlePick}
+          disabled={loading}
+        />
+
+        <Pressable style={styles.secondaryButton} onPress={handleOpenCamera}>
+          <Text style={styles.secondaryText}>Foto maken</Text>
+        </Pressable>
+
         {loading ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
       </View>
 
@@ -107,6 +129,20 @@ const styles = StyleSheet.create({
   camera: { fontSize: 34, marginBottom: 8 },
   big: { color: colors.text, fontWeight: '800', fontSize: 23, marginBottom: 4 },
   sub: { color: colors.textSoft, textAlign: 'center', marginBottom: 16 },
+  secondaryButton: {
+    marginTop: 12,
+    backgroundColor: colors.card2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 24
+  },
+  secondaryText: {
+    color: colors.text,
+    fontWeight: '700',
+    fontSize: 16
+  },
   recent: {
     backgroundColor: colors.card,
     borderWidth: 1,
