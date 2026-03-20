@@ -10,15 +10,15 @@ import { colors } from '../src/constants/colors';
 import { t } from '../src/i18n';
 import { useSettingsStore } from '../src/store/settingsStore';
 import { useMediaStore } from '../src/store/mediaStore';
-import { pickMedia, persistImportedFile } from '../src/services/mediaImport';
-import { analyzeMedia } from '../src/services/ai';
+import { pickMedia } from '../src/services/mediaImport';
+import { analyzeMediaInCloud } from '../src/services/openaiCloud';
 import { canProcessMore, getMonthlyUsage, incrementMonthlyUsage } from '../src/services/quota';
-import { MediaItem } from '../src/types/media';
+import { useDraftStore } from '../src/store/draftStore';
 
 export default function ScanScreen() {
   const language = useSettingsStore((s) => s.language);
-  const addItem = useMediaStore((s) => s.addItem);
   const items = useMediaStore((s) => s.items);
+  const setDraft = useDraftStore((s) => s.setDraft);
   const [loading, setLoading] = useState(false);
   const [usage, setUsage] = useState<number | null>(null);
 
@@ -26,49 +26,48 @@ export default function ScanScreen() {
     const allowed = await canProcessMore();
     const currentUsage = await getMonthlyUsage();
     setUsage(currentUsage);
+
     if (!allowed) {
       router.push('/modal/paywall');
       return;
     }
+
     try {
       setLoading(true);
       const asset = await pickMedia();
       if (!asset) return;
 
-      const suggestion = await analyzeMedia(asset.fileName ?? 'bestand', asset.mimeType);
-      const storedUri = await persistImportedFile(asset.uri, suggestion.title);
-      const now = new Date().toISOString();
+      const suggestion = await analyzeMediaInCloud({
+        uri: asset.uri,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType
+      });
 
-      const item: MediaItem = {
-        id: `${Date.now()}`,
-        originalUri: asset.uri,
-        storedUri,
-        kind: suggestion.kind,
-        title: suggestion.title,
-        description: suggestion.description,
-        tags: suggestion.tags,
-        folder: suggestion.folder,
-        fileSize: asset.fileSize,
-        mimeType: asset.mimeType ?? undefined,
-        createdAt: now,
-        updatedAt: now,
-        aiRecognized: suggestion.aiRecognized
-      };
+      setDraft(
+        {
+          uri: asset.uri,
+          fileName: asset.fileName,
+          fileSize: asset.fileSize,
+          mimeType: asset.mimeType
+        },
+        suggestion
+      );
 
-      addItem(item);
       await incrementMonthlyUsage();
-      router.push(`/detail/${item.id}`);
+      router.push('/review');
     } catch (error: any) {
       Alert.alert('Fout', error?.message ?? 'Import mislukt');
     } finally {
       setLoading(false);
-      setUsage(await getMonthlyUsage());
+      const after = await getMonthlyUsage();
+      setUsage(after);
     }
   }
 
   return (
     <Screen>
       <AppHeader title={t(language, 'scan')} subtitle="AI herkent inhoud automatisch" />
+
       <View style={styles.dropZone}>
         <Text style={styles.camera}>📷</Text>
         <Text style={styles.big}>{t(language, 'addMedia')}</Text>

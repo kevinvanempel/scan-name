@@ -47,7 +47,9 @@ export default function RootLayout() {
         }}
       />
       <Tabs.Screen name="detail/[id]" options={{ href: null }} />
-      <Tabs.Screen name="modal/paywall" options={{ href: null }} />
+      <Tabs.Screen name="modal/paywall" options={{ href: null, presentation: 'modal' }} />
+      <Tabs.Screen name="review" options={{ href: null }} />
+      <Tabs.Screen name="auth" options={{ href: null }} />
     </Tabs>
   );
 }

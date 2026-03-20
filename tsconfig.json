@@ -8,6 +8,9 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "backend/src/schema.js",
+    "backend/src/openai.js",
+    "backend/src/server.js"
   ]
 }
