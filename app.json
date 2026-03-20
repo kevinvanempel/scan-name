@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Scan & Name",
+    "slug": "scan-name",
+    "scheme": "scanname",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Scan & Name heeft toegang nodig tot je foto's om media te importeren.",
+          "cameraPermission": "Scan & Name heeft toegang nodig tot je camera om media op te nemen."
+        }
+      ],
+      "expo-asset",
+      "expo-localization",
+      "expo-sqlite"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kevinvanempel.scanname"
+    },
+    "android": {
+      "package": "com.kevinvanempel.scanname"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
